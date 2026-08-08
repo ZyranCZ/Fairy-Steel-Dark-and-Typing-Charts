@@ -19,6 +19,7 @@ Adds the **Steel type** and changes:
 
 * **Magnemite** → Electric / Steel
 * **Magneton** → Electric / Steel
+<img width="809" height="753" alt="image" src="https://github.com/user-attachments/assets/9bd10700-72f0-45df-8da5-4e8da1c1cf0f" />
 
 The Steel type chart depends on the selected configuration.
 
@@ -31,6 +32,7 @@ Optionally adds the **Fairy type** and changes:
 * **Jigglypuff** → Normal / Fairy
 * **Wigglytuff** → Normal / Fairy
 * **Mr. Mime** → Psychic / Fairy
+<img width="809" height="753" alt="image" src="https://github.com/user-attachments/assets/3355ed44-22ff-48ed-81b2-d0d2d996a7ef" />
 
 Fairy uses the Generation VI+ type relationships against the types available in Generation I.
 
@@ -69,6 +71,7 @@ Applies the major type-system changes introduced with Generation II.
 Magnemite and Magneton become **Electric / Steel**.
 
 Steel uses its original Generation II–V defensive relationships, including resistance to Ghost.
+<img width="809" height="753" alt="image" src="https://github.com/user-attachments/assets/90d09e27-5048-49eb-b5f9-5a34b21818ea" />
 
 ---
 
@@ -88,17 +91,18 @@ Magnemite and Magneton become **Electric / Steel**.
 Fairy typing is added to Clefairy, Clefable, Jigglypuff, Wigglytuff and Mr. Mime.
 
 Unlike the Generation II Steel chart, **Steel no longer resists Ghost**.
+<img width="809" height="753" alt="image" src="https://github.com/user-attachments/assets/96ebb9a4-134a-40d6-93a7-372cecda26f6" />
 
 ---
 
 ## CUSTOM
+<img width="809" height="753" alt="image" src="https://github.com/user-attachments/assets/e76fe6bf-1acf-4908-b613-cf069c2adb1c" />
 
 Allows every option to be configured independently.
 
 If you manually change any individual setting while using one of the predefined presets, the preset automatically changes to:
 
 **CUSTOM**
-
 Selecting CUSTOM itself does not overwrite your current settings.
 
 ---
