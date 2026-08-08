@@ -10,12 +10,13 @@ Typing and type-chart changes are applied when Gen1Recomp loads.
 After changing any option, save your settings and restart the game.
 
 **Check out my other mods:**<br>
-**Check out my other mods:**<br>
 * [Autofire A/B + Directional Keys Mod](https://github.com/ZyranCZ/Move-Category-Preview)<br>
 * [Steel and/or Fairy and/or Typing Charts](https://github.com/ZyranCZ/Steel-and-or-Fairy-and-or-Typing-Charts)<br>
 * [Move Category (PHYS/SPEC) Preview](https://github.com/ZyranCZ/Move-Category-Preview)<br>
 * [Special Stat Split
 ](https://github.com/ZyranCZ/Special-Stat-Split/)<br>
+* [Enemy HP Visible](https://github.com/ZyranCZ/Enemy-HP)
+* [Can Always Escape](https://github.com/ZyranCZ/Can-Always-Escape)
 ---
 
 ## Features
