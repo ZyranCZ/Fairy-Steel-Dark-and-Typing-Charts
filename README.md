@@ -13,7 +13,8 @@ After changing any option, save your settings and restart the game.
 [Autofire A/B + Directional Keys Mod](https://github.com/ZyranCZ/Move-Category-Preview)<br>
 [Steel and/or Fairy and/or Typing Charts](https://github.com/ZyranCZ/Steel-and-or-Fairy-and-or-Typing-Charts)<br>
 [Move Category (PHYS/SPEC) Preview](https://github.com/ZyranCZ/Move-Category-Preview)<br>
-
+[Special Stat Split
+](https://github.com/ZyranCZ/Special-Stat-Split/)<br>
 
 ---
 
