@@ -9,6 +9,12 @@ The mod allows you to keep the original Generation I type system, switch to sele
 Typing and type-chart changes are applied when Gen1Recomp loads.
 After changing any option, save your settings and restart the game.
 
+**Check out my other mods:**<br>
+[Autofire A/B + Directional Keys Mod](https://github.com/ZyranCZ/Move-Category-Preview)<br>
+[Steel and/or Fairy and/or Typing Charts](https://github.com/ZyranCZ/Steel-and-or-Fairy-and-or-Typing-Charts)<br>
+[Move Category (PHYS/SPEC) Preview](https://github.com/ZyranCZ/Move-Category-Preview)<br>
+
+
 ---
 
 ## Features
