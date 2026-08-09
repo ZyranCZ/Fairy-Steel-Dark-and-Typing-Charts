@@ -1,4 +1,4 @@
-# STEEL/FAIRY AND TYPING CHARTS
+# FAIRY/STEEL/DARK AND TYPING CHARTS
 
 A configurable typing modernization mod for **Gen1Recomp**.
 
