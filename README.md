@@ -19,6 +19,8 @@ After changing any option, save your settings and restart the game.
 * [Can Always Escape](https://github.com/ZyranCZ/Can-Always-Escape)
 * [Trainers Let You Choose Lead Pokemon](https://github.com/ZyranCZ/Trainers-Let-You-Choose-Lead-Pokemon)
 * [Evolve in Battle](https://github.com/ZyranCZ/Evolve-in-Battle)
+* [HELP Story Guide](https://github.com/ZyranCZ/HELP-Story-Guide/)
+
 ---
 
 ## Features
