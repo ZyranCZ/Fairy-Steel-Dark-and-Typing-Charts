@@ -1,363 +1,191 @@
-# FAIRY/STEEL/DARK AND TYPING CHARTS
+# STEEL/FAIRY AND TYPING CHARTS v1.2.2
 
-A configurable typing modernization mod for **Gen1Recomp**.
+A configurable type modernization and type-chart mod for **Gen1Recomp**.
 
-The mod allows you to keep the original Generation I type system, switch to selected Generation II changes, enable Generation VI-style Steel/Fairy typing, or create your own custom combination.
+Internal mod ID: `steel_typing`.
 
-> **ANY CHANGES REQUIRE SAVE AND RESTART**
+> **ANY CHANGES REQUIRE SAVE AND RESTART.**
 
-Typing and type-chart changes are applied when Gen1Recomp loads.
-After changing any option, save your settings and restart the game.
+## Presets
 
-**Check out my other mods:**<br>
-* [Autofire A/B + Directional Keys Mod](https://github.com/ZyranCZ/autofire)<br>
-* [Steel and/or Fairy and/or Typing Charts](https://github.com/ZyranCZ/Steel-and-or-Fairy-and-or-Typing-Charts)<br>
-* [Move Category (PHYS/SPEC) Preview](https://github.com/ZyranCZ/Move-Category-Preview)<br>
-* [Special Stat Split
-](https://github.com/ZyranCZ/Special-Stat-Split/)<br>
-* [Enemy HP Visible](https://github.com/ZyranCZ/Enemy-HP)
-* [Can Always Escape](https://github.com/ZyranCZ/Can-Always-Escape)
-* [Trainers Let You Choose Lead Pokemon](https://github.com/ZyranCZ/Trainers-Let-You-Choose-Lead-Pokemon)
-* [Evolve in Battle](https://github.com/ZyranCZ/Evolve-in-Battle)
-* [HELP Story Guide](https://github.com/ZyranCZ/HELP-Story-Guide/)
-* [Professor Oak's Pokémon DV/Stat Appraisal](https://github.com/ZyranCZ/Professor-Oak-DV-STAT-Evaluation)
+- **VANILLA**
+- **GEN II (STEEL+DARK)**
+- **GEN VI (STEEL+DARK+FAIRY)**
+- **CUSTOM**
 
+Selecting a built-in preset updates every component option. Manually changing any component switches PRESET to **CUSTOM**.
 
+| Option | VANILLA | GEN II | GEN VI |
+|---|---:|---:|---:|
+| STEEL TYPE | OFF | ON | ON |
+| DARK TYPE | OFF | ON | ON |
+| FAIRY TYPE | OFF | OFF | ON |
+| GHOST VS STEEL FIX | OFF | GEN II | GEN VI |
+| DARK VS STEEL FIX | OFF | GEN II | GEN VI |
+| GHOST VS PSYCHIC FIX | Vanilla | GEN II | GEN II |
+| BUG VS POISON FIX | Vanilla | GEN II | GEN II |
+| ICE VS FIRE FIX | Vanilla | GEN II | GEN II |
 
----
+**Default preset: GEN VI (STEEL+DARK+FAIRY).**
 
-## Features
+## OFF means no-op
 
-### Steel Type
+Every option that offers **OFF** follows the same rule:
 
-Adds the **Steel type** and changes:
+**OFF does not restore Vanilla and does not overwrite another mod. It performs no change for that option.**
 
-* **Magnemite** → Electric / Steel
-* **Magneton** → Electric / Steel
-<img width="809" height="753" alt="image" src="https://github.com/user-attachments/assets/9bd10700-72f0-45df-8da5-4e8da1c1cf0f" />
+This matters especially with **Crystal 251**. For example, if Crystal already supplies its Gen II Ghost/Psychic, Bug/Poison, Ice/Fire, Steel or Dark behavior, selecting OFF leaves Crystal's value untouched.
 
-The Steel type chart depends on the selected configuration.
+Where a selector also offers **Vanilla**, Vanilla is an explicit request to write the original Gen I relationship. It is intentionally different from OFF.
 
-### Fairy Type
+## Crystal 251 compatibility
 
-Optionally adds the **Fairy type** and changes:
+Crystal 251 is an optional dependency and loads before this mod. This mod then becomes the final layer for the features the player enables here.
 
-* **Clefairy** → Fairy
-* **Clefable** → Fairy
-* **Jigglypuff** → Normal / Fairy
-* **Wigglytuff** → Normal / Fairy
-* **Mr. Mime** → Psychic / Fairy
-<img width="809" height="753" alt="image" src="https://github.com/user-attachments/assets/3355ed44-22ff-48ed-81b2-d0d2d996a7ef" />
+Crystal can continue to own:
 
-Fairy uses the Generation VI+ type relationships against the types available in Generation I.
+- its 251-Pokémon content;
+- native Johto data;
+- Steel and Dark records;
+- its wider battle overhaul.
 
----
+This mod safely patches the merged records afterward rather than duplicate-registering Crystal's Steel or Dark types.
 
-# Presets
+When a type toggle is OFF, Crystal-owned content of that type is not removed. For example, **STEEL TYPE: OFF** does not strip Steel from Crystal's Magnemite/Magneton or other Crystal content.
 
-The mod provides four presets:
+## Generation VI Fairy Pokémon
 
-## VANILLA
+With **FAIRY TYPE: ON**, every affected Gen I/II species that exists in the merged Pokédex is changed from its pre-Fairy typing to its Generation VI+ typing.
 
-Keeps the original Generation I typing system.
+### Generation I
 
-* Steel Type: OFF
-* Fairy Type: OFF
-* Ghost vs Steel Fix: OFF
-* Ghost vs Psychic Fix: Vanilla
-* Bug vs Poison Fix: Vanilla
-* Ice vs Fire Fix: Vanilla
+- Clefairy: Normal -> Fairy
+- Clefable: Normal -> Fairy
+- Jigglypuff: Normal -> Normal/Fairy
+- Wigglytuff: Normal -> Normal/Fairy
+- Mr. Mime: Psychic -> Psychic/Fairy
 
-No Pokémon receive Steel or Fairy typing.
+### Generation II / Crystal 251
 
----
+- Cleffa: Normal -> Fairy
+- Igglybuff: Normal -> Normal/Fairy
+- Togepi: Normal -> Fairy
+- Togetic: Normal/Flying -> Fairy/Flying
+- Marill: Water -> Water/Fairy
+- Azumarill: Water -> Water/Fairy
+- Snubbull: Normal -> Fairy
+- Granbull: Normal -> Fairy
 
-## GEN II (STEEL)
+The mod only applies a species conversion when the current typing matches the supported pre-Fairy baseline or is already correct. An unrelated custom typing supplied by another mod is not blindly destroyed.
 
-Applies the major type-system changes introduced with Generation II.
+## Fairy move typing
 
-* Steel Type: ON
-* Fairy Type: OFF
-* Ghost vs Steel Fix: GEN II
-* Ghost vs Psychic Fix: GEN II
-* Bug vs Poison Fix: GEN II
-* Ice vs Fire Fix: GEN II
+When the following Gen II moves exist, **FAIRY TYPE: ON** changes them from Normal to Fairy:
 
-Magnemite and Magneton become **Electric / Steel**.
+- Charm
+- Moonlight
+- Sweet Kiss
 
-Steel uses its original Generation II–V defensive relationships, including resistance to Ghost.
-<img width="809" height="753" alt="image" src="https://github.com/user-attachments/assets/90d09e27-5048-49eb-b5f9-5a34b21818ea" />
+With Crystal 251 v0.9.19, the same change is also mirrored into Crystal's exported `crystalMoves` runtime table so Crystal-specific battle systems and the merged move registry agree on the move type.
 
----
+When FAIRY TYPE is ON, these canonical move IDs are authoritative: if an earlier mod gave Charm, Moonlight or Sweet Kiss another type, this mod changes them to Fairy. Missing moves are not created.
 
-## GEN VI (STEEL+FAIRY)
+## Steel move typing
 
-Applies the Steel/Fairy configuration based on Generation VI.
+Generation II introduced Steel together with its first Steel-type moves; no Generation I move was retroactively converted to Steel. When the following moves exist, **STEEL TYPE: ON** explicitly enforces their Steel typing:
 
-* Steel Type: ON
-* Fairy Type: ON
-* Ghost vs Steel Fix: GEN VI
-* Ghost vs Psychic Fix: GEN II
-* Bug vs Poison Fix: GEN II
-* Ice vs Fire Fix: GEN II
+- Iron Tail
+- Metal Claw
+- Steel Wing
+- Snap Trap (Grass in Generation VIII -> Steel from Generation IX)
 
-Magnemite and Magneton become **Electric / Steel**.
+The first three are the Steel moves available in Generation II/Crystal. No Generation I move was retroactively changed to Steel. Snap Trap is included as forward-compatible historical retyping support if a later content mod provides it.
 
-Fairy typing is added to Clefairy, Clefable, Jigglypuff, Wigglytuff and Mr. Mime.
+In standalone Gen I these moves normally do not exist, so nothing is added. With Crystal 251 the three Generation II moves already arrive as Steel, but this mod still applies final authority to both the merged move registry and Crystal's exported runtime move table. If another earlier mod changed one of these move IDs to another type, STEEL TYPE ON changes it back to Steel.
 
-Unlike the Generation II Steel chart, **Steel no longer resists Ghost**.
-<img width="809" height="753" alt="image" src="https://github.com/user-attachments/assets/96ebb9a4-134a-40d6-93a7-372cecda26f6" />
+## Complete Fairy type chart
 
----
+When Fairy is enabled, this mod explicitly writes the complete Fairy attack and defense matrix, including neutral **1x** rows. That makes this mod authoritative over an earlier Fairy implementation instead of only supplying the non-neutral exceptions.
 
-## CUSTOM
-<img width="809" height="753" alt="image" src="https://github.com/user-attachments/assets/e76fe6bf-1acf-4908-b613-cf069c2adb1c" />
+### Fairy attacking
 
-Allows every option to be configured independently.
+- **2x:** Fighting, Dragon, Dark
+- **1/2x:** Fire, Poison, Steel
+- **1x:** every other available standard type
 
-If you manually change any individual setting while using one of the predefined presets, the preset automatically changes to:
+### Fairy defending
 
-**CUSTOM**
-Selecting CUSTOM itself does not overwrite your current settings.
+- **2x damage from:** Poison, Steel
+- **1/2x damage from:** Fighting, Bug, Dark
+- **0x damage from:** Dragon
+- **1x damage from:** every other available standard type
 
----
+Steel and Dark interactions are written whenever those types exist in the merged registry, including when Crystal owns them.
 
-# Individual Options
+## Dark type in standalone Gen I
 
-## STEEL TYPE
+**DARK TYPE** no longer depends on Crystal 251.
 
-**ON / OFF**
+When enabled without Crystal, the mod creates Dark as a normal Gen1Recomp type with its proper type chart and Gen II-style type category (`special`).
 
-Controls whether the Steel type exists and whether:
+The original Gen I move **Bite** is changed from Normal to Dark. Bite is the only Generation I move that became Dark when Generation II introduced the type.
 
-* Magnemite becomes Electric / Steel
-* Magneton becomes Electric / Steel
+Crystal already imports its native Generation II Dark moves. This mod does not recreate Crystal moves that do not exist in standalone Gen I.
 
----
+### Dark attacking
 
-## FAIRY TYPE
+- **2x:** Psychic, Ghost
+- **1/2x:** Fighting, Dark
+- **1x:** other Gen I types
+- **1/2x vs Steel in Gen II mode**
+- **1x vs Steel in Gen VI mode**
+- **1/2x vs Fairy when Fairy exists**
 
-**ON / OFF**
+### Dark defending
 
-Controls whether the Fairy type exists and whether the following Pokémon receive their later-generation Fairy typing:
+- **2x damage from:** Fighting, Bug, Fairy
+- **1/2x damage from:** Ghost, Dark
+- **0x damage from:** Psychic
+- **1x damage from:** other standard types
 
-| Pokémon    | Typing          |
-| ---------- | --------------- |
-| Clefairy   | Fairy           |
-| Clefable   | Fairy           |
-| Jigglypuff | Normal / Fairy  |
-| Wigglytuff | Normal / Fairy  |
-| Mr. Mime   | Psychic / Fairy |
+## Historical type-chart controls
 
----
+### Ghost -> Psychic
 
-## GHOST VS STEEL FIX
+- **OFF:** do nothing
+- **Vanilla:** 0x
+- **GEN II:** 2x
 
-Options:
+### Bug / Poison
 
-* OFF
-* GEN II
-* GEN VI
+- **OFF:** do nothing
+- **Vanilla:** Bug -> Poison 2x and Poison -> Bug 2x
+- **GEN II:** Bug -> Poison 1/2x and Poison -> Bug 1x
 
-### GEN II
+### Ice -> Fire
 
-Ghost-type attacks deal:
+- **OFF:** do nothing
+- **Vanilla:** 1x
+- **GEN II:** 1/2x
 
-**½× damage to Steel**
+### Ghost -> Steel
 
-This matches Steel's defensive typing from Generations II–V.
+- **OFF:** do nothing
+- **GEN II:** 1/2x
+- **GEN VI:** 1x
 
-### GEN VI
+### Dark -> Steel
 
-Ghost-type attacks deal:
+- **OFF:** do nothing
+- **GEN II:** 1/2x
+- **GEN VI:** 1x
 
-**1× damage to Steel**
+## Implementation notes
 
-Starting with Generation VI, Steel lost its resistance to Ghost.
+All Pokémon, move and type-chart changes use Gen1Recomp API 2 content registries. Existing records are patched rather than replaced when only one field needs to change.
 
----
+The manifest declares `CRYSTAL_251` as an optional dependency and uses priority `120`, ensuring Crystal is already available when this compatibility layer runs.
 
-## GHOST VS PSYCHIC FIX
+The PRESET UI uses the existing narrow `ManagerState:setOption` integration so a preset can synchronize its eight component settings. Gameplay data itself remains registry-driven.
 
-Options:
-
-* Vanilla
-* GEN II
-
-### Vanilla
-
-Ghost → Psychic:
-
-**0×**
-
-This preserves the original Generation I behavior.
-
-### GEN II
-
-Ghost → Psychic:
-
-**2×**
-
-This matches Generation II and later.
-
----
-
-## BUG VS POISON FIX
-
-Options:
-
-* Vanilla
-* GEN II
-
-### Vanilla
-
-Generation I:
-
-* Bug → Poison: **2×**
-* Poison → Bug: **2×**
-
-### GEN II
-
-Generation II and later:
-
-* Bug → Poison: **½×**
-* Poison → Bug: **1×**
-
----
-
-## ICE VS FIRE FIX
-
-Options:
-
-* Vanilla
-* GEN II
-
-### Vanilla
-
-Ice → Fire:
-
-**1×**
-
-### GEN II
-
-Ice → Fire:
-
-**½×**
-
----
-
-# Steel Type Chart
-
-When Steel is enabled, it behaves as a proper type rather than simply being a label added to Pokémon.
-
-This means dual-type interactions are calculated normally by the Gen1Recomp battle system.
-
-For example, Electric / Steel Magnemite and Magneton can naturally receive combined multipliers such as:
-
-* Ground → **4×**
-* Fire → **2×**
-* Fighting → **2×**
-* Electric → **½×**
-* Flying → **¼×**
-* Poison → **0×**
-
-The exact Ghost interaction depends on the selected **GHOST VS STEEL FIX** setting.
-
----
-
-# Fairy Type Chart
-
-When Fairy is enabled, it uses its Generation VI+ relationships against available Generation I types.
-
-Defensively:
-
-* Poison → Fairy: **2×**
-* Steel → Fairy: **2×**
-* Fighting → Fairy: **½×**
-* Bug → Fairy: **½×**
-* Dragon → Fairy: **0×**
-
-Offensively:
-
-* Fairy → Fighting: **2×**
-* Fairy → Dragon: **2×**
-* Fairy → Fire: **½×**
-* Fairy → Poison: **½×**
-* Fairy → Steel: **½×**
-
-Because Dark does not exist in vanilla Generation I, Dark-type relationships are not added by this mod.
-
----
-
-# Dual-Type Examples
-
-The new typings interact normally with existing Generation I types.
-
-### Jigglypuff / Wigglytuff
-
-Normal / Fairy
-
-Fighting normally deals 2× damage to Normal, while Fairy resists Fighting:
-
-**2× × ½× = 1×**
-
-So Fighting becomes neutral.
-
-### Mr. Mime
-
-Psychic / Fairy
-
-Both Psychic and Fairy resist Fighting:
-
-**½× × ½× = ¼×**
-
-Mr. Mime therefore takes only quarter damage from Fighting-type attacks.
-
-### Magnemite / Magneton
-
-Electric / Steel
-
-Both Electric and Steel are weak to Ground:
-
-**2× × 2× = 4×**
-
----
-
-# Important: Restart Required
-
-Gen1Recomp loads Pokémon typing and type-chart registry changes during startup.
-
-Because of this:
-
-> **ANY CHANGES REQUIRE SAVE AND RESTART**
-
-Changing an option updates the configuration immediately, but the actual Pokémon typing and battle type chart will only change after restarting Gen1Recomp.
-
----
-
-# Compatibility
-
-The mod uses Gen1Recomp's content registry system for Pokémon typings and type-chart relationships.
-
-It is designed to avoid unnecessary changes to the battle engine itself.
-
-The mod also avoids blindly replacing Pokémon typings when another mod has already modified the same species where possible.
-
-As with any gameplay mod that changes Pokémon types or type effectiveness, conflicts may occur with other mods that modify the same Pokémon or type-chart entries.
-
----
-
-# Version
-
-**1.0.0**
-
-First public release.
-
----
-
-# Credits
-
-Created for **Gen1Recomp**.
-
-Gen1Recomp:
-https://github.com/bryanthaboi/gen1recomp
+Both players should use the same configuration for link/online battles.

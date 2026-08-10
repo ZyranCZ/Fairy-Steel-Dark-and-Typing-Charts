@@ -1,0 +1,730 @@
+-- STEEL/FAIRY AND TYPING CHARTS v1.2.2
+--
+-- Preset + custom type-chart controls for Gen1Recomp.
+-- Content changes are load-time registry changes, so gameplay changes take
+-- effect after restarting Gen1Recomp. The options UI itself is synchronized
+-- immediately: selecting a preset writes its component options; manually
+-- changing any component switches PRESET to CUSTOM.
+
+local MOD_ID = "steel_typing"
+local STEEL = "STEEL"
+local FAIRY = "FAIRY"
+local DARK = "DARK"
+
+local PRESET_VANILLA = "vanilla"
+local PRESET_GEN2 = "gen2"
+local PRESET_GEN6 = "gen6"
+local PRESET_CUSTOM = "custom"
+
+local FIX_OFF = "off"
+local FIX_VANILLA = "vanilla"
+local FIX_GEN2 = "gen2"
+local FIX_GEN6 = "gen6"
+
+local KEY_PRESET = "preset"
+local KEY_STEEL = "steel_type"
+local KEY_DARK = "dark_type"
+local KEY_FAIRY = "fairy_type"
+local KEY_GHOST_STEEL = "ghost_vs_steel"
+local KEY_DARK_STEEL = "dark_vs_steel"
+local KEY_GHOST_PSYCHIC = "ghost_vs_psychic"
+local KEY_BUG_POISON = "bug_vs_poison"
+local KEY_ICE_FIRE = "ice_vs_fire"
+
+local COMPONENT_KEYS = {
+  KEY_STEEL,
+  KEY_DARK,
+  KEY_FAIRY,
+  KEY_GHOST_STEEL,
+  KEY_DARK_STEEL,
+  KEY_GHOST_PSYCHIC,
+  KEY_BUG_POISON,
+  KEY_ICE_FIRE,
+}
+
+local COMPONENT_KEY_SET = {}
+for _, key in ipairs(COMPONENT_KEYS) do COMPONENT_KEY_SET[key] = true end
+
+local PRESETS = {
+  [PRESET_VANILLA] = {
+    [KEY_STEEL] = false,
+    [KEY_DARK] = false,
+    [KEY_FAIRY] = false,
+    [KEY_GHOST_STEEL] = FIX_OFF,
+    [KEY_DARK_STEEL] = FIX_OFF,
+    [KEY_GHOST_PSYCHIC] = FIX_VANILLA,
+    [KEY_BUG_POISON] = FIX_VANILLA,
+    [KEY_ICE_FIRE] = FIX_VANILLA,
+  },
+  [PRESET_GEN2] = {
+    [KEY_STEEL] = true,
+    [KEY_DARK] = true,
+    [KEY_FAIRY] = false,
+    [KEY_GHOST_STEEL] = FIX_GEN2,
+    [KEY_DARK_STEEL] = FIX_GEN2,
+    [KEY_GHOST_PSYCHIC] = FIX_GEN2,
+    [KEY_BUG_POISON] = FIX_GEN2,
+    [KEY_ICE_FIRE] = FIX_GEN2,
+  },
+  [PRESET_GEN6] = {
+    [KEY_STEEL] = true,
+    [KEY_DARK] = true,
+    [KEY_FAIRY] = true,
+    [KEY_GHOST_STEEL] = FIX_GEN6,
+    [KEY_DARK_STEEL] = FIX_GEN6,
+    [KEY_GHOST_PSYCHIC] = FIX_GEN2,
+    [KEY_BUG_POISON] = FIX_GEN2,
+    [KEY_ICE_FIRE] = FIX_GEN2,
+  },
+}
+
+-- Gen1Recomp matchup multipliers are x10:
+--   0 = immune, 5 = half damage, 10 = neutral, 20 = double damage.
+local STEEL_COMMON = {
+  -- Existing attack types -> Steel defender
+  { "NORMAL>STEEL",        5 },
+  { "FIGHTING>STEEL",     20 },
+  { "FLYING>STEEL",        5 },
+  { "POISON>STEEL",        0 },
+  { "GROUND>STEEL",       20 },
+  { "ROCK>STEEL",          5 },
+  { "BUG>STEEL",           5 },
+  { "FIRE>STEEL",         20 },
+  { "GRASS>STEEL",         5 },
+  { "PSYCHIC_TYPE>STEEL",  5 },
+  { "ICE>STEEL",           5 },
+  { "DRAGON>STEEL",        5 },
+
+  -- Steel attacker -> existing defender types
+  { "STEEL>ROCK",         20 },
+  { "STEEL>FIRE",          5 },
+  { "STEEL>WATER",         5 },
+  { "STEEL>ELECTRIC",      5 },
+  { "STEEL>ICE",          20 },
+  { "STEEL>STEEL",         5 },
+}
+
+-- Canonical types that always exist in the base Gen I registry. Complete
+-- Fairy/Dark charts below explicitly write neutral rows too, so this mod is
+-- authoritative over earlier type-chart mods instead of only adding the
+-- non-neutral exceptions.
+local GEN1_TYPES = {
+  "NORMAL", "FIGHTING", "FLYING", "POISON", "GROUND", "ROCK", "BUG",
+  "GHOST", "FIRE", "WATER", "GRASS", "ELECTRIC", "PSYCHIC_TYPE", "ICE",
+  "DRAGON",
+}
+
+local FAIRY_ATTACK = {
+  FIGHTING = 20,
+  POISON = 5,
+  FIRE = 5,
+  DRAGON = 20,
+  DARK = 20,
+  STEEL = 5,
+}
+
+local FAIRY_DEFENSE = {
+  FIGHTING = 5,
+  POISON = 20,
+  BUG = 5,
+  DRAGON = 0,
+  DARK = 5,
+  STEEL = 20,
+}
+
+local DARK_ATTACK = {
+  FIGHTING = 5,
+  GHOST = 20,
+  PSYCHIC_TYPE = 20,
+  DARK = 5,
+  FAIRY = 5,
+  -- DARK>STEEL intentionally lives behind DARK VS STEEL FIX because it
+  -- changed from 1/2x in Gen II-V to 1x in Gen VI.
+}
+
+local DARK_DEFENSE = {
+  FIGHTING = 20,
+  BUG = 20,
+  GHOST = 5,
+  PSYCHIC_TYPE = 0,
+  DARK = 5,
+  FAIRY = 20,
+  STEEL = 10,
+}
+
+local SPECIES = {
+  MAGNEMITE = { baseline = "ELECTRIC", steel = { "ELECTRIC", STEEL } },
+  MAGNETON  = { baseline = "ELECTRIC", steel = { "ELECTRIC", STEEL } },
+
+  -- Generation I species that gained Fairy in Generation VI.
+  CLEFAIRY   = { baseline = "NORMAL", fairy = { FAIRY } },
+  CLEFABLE   = { baseline = "NORMAL", fairy = { FAIRY } },
+  JIGGLYPUFF = { baseline = "NORMAL", fairy = { "NORMAL", FAIRY } },
+  WIGGLYTUFF = { baseline = "NORMAL", fairy = { "NORMAL", FAIRY } },
+  MR_MIME    = { baseline = "PSYCHIC_TYPE", fairy = { "PSYCHIC_TYPE", FAIRY } },
+
+  -- Generation II species present when Crystal 251 (or another Johto content
+  -- mod) is loaded. Their Crystal typings are the safe pre-Fairy baselines.
+  CLEFFA     = { baseline = "NORMAL", fairy = { FAIRY }, optional = true },
+  IGGLYBUFF  = { baseline = "NORMAL", fairy = { "NORMAL", FAIRY }, optional = true },
+  TOGEPI     = { baseline = "NORMAL", fairy = { FAIRY }, optional = true },
+  TOGETIC    = { baselines = { { "NORMAL", "FLYING" } }, fairy = { FAIRY, "FLYING" }, optional = true },
+  MARILL     = { baseline = "WATER", fairy = { "WATER", FAIRY }, optional = true },
+  AZUMARILL  = { baseline = "WATER", fairy = { "WATER", FAIRY }, optional = true },
+  SNUBBULL   = { baseline = "NORMAL", fairy = { FAIRY }, optional = true },
+  GRANBULL   = { baseline = "NORMAL", fairy = { FAIRY }, optional = true },
+}
+
+local STEEL_SPECIES = { "MAGNEMITE", "MAGNETON" }
+local FAIRY_SPECIES = {
+  "CLEFAIRY", "CLEFABLE", "JIGGLYPUFF", "WIGGLYTUFF", "MR_MIME",
+  "CLEFFA", "IGGLYBUFF", "TOGEPI", "TOGETIC", "MARILL", "AZUMARILL",
+  "SNUBBULL", "GRANBULL",
+}
+
+local FAIRY_MOVES = { "CHARM", "MOONLIGHT", "SWEET_KISS" }
+-- Generation II introduced Steel with Iron Tail, Metal Claw and Steel Wing. No
+-- Generation I move was retroactively converted to Steel. Snap Trap is also
+-- included because it was retroactively changed from Grass to Steel in
+-- Generation IX. Missing records are never created, so this remains safe in
+-- standalone Gen I and with Crystal 251.
+local STEEL_MOVES = { "IRON_TAIL", "METAL_CLAW", "STEEL_WING", "SNAP_TRAP" }
+local DARK_MOVES = { BITE = "NORMAL" }
+
+local function sameTyping(types, expected)
+  if type(types) ~= "table" or type(expected) ~= "table" then return false end
+  if #types ~= #expected then return false end
+  for i = 1, #expected do
+    if types[i] ~= expected[i] then return false end
+  end
+  return true
+end
+
+-- Vanilla Gen I may represent a monotype once or duplicate it across both
+-- type slots. Accept either form while respecting typings owned by other mods.
+local function isVanillaMonotype(types, expectedType)
+  if type(types) ~= "table" or #types == 0 then return false end
+  for _, typeId in ipairs(types) do
+    if typeId ~= expectedType then return false end
+  end
+  return true
+end
+
+local function typingText(types)
+  if type(types) ~= "table" then return tostring(types) end
+  return table.concat(types, "/")
+end
+
+-- Register a missing type, or minimally patch an existing type owned by an
+-- earlier mod. This is what makes the mod safe to load after Crystal 251: its
+-- STEEL record (including Crystal's index) is preserved instead of duplicated.
+local function ensureType(mod, id, partial)
+  if mod.content.type_chart:get(id) ~= nil then
+    mod.content.type_chart:patch(id, partial)
+    return "existing"
+  end
+  mod.content.type_chart:register(id, partial)
+  return "registered"
+end
+
+-- Existing matchup rows are patched. Neutral matchups may have no row, so
+-- register them when the selected rules need an explicit value.
+local function setMatchup(mod, id, multiplier)
+  if mod.content.type_chart:get(id) ~= nil then
+    mod.content.type_chart:patch(id, { multiplier = multiplier })
+  else
+    mod.content.type_chart:register(id, { multiplier = multiplier })
+  end
+end
+
+local function setRows(mod, rows)
+  for _, row in ipairs(rows) do setMatchup(mod, row[1], row[2]) end
+end
+
+local function sourceTypingAllowed(types, spec)
+  if spec.baseline and isVanillaMonotype(types, spec.baseline) then return true end
+  for _, baseline in ipairs(spec.baselines or {}) do
+    if sameTyping(types, baseline) then return true end
+  end
+  return false
+end
+
+local function baselineText(spec)
+  if spec.baseline then return spec.baseline end
+  local out = {}
+  for _, baseline in ipairs(spec.baselines or {}) do out[#out + 1] = typingText(baseline) end
+  return table.concat(out, " or ")
+end
+
+local function patchSpecies(mod, speciesId, target)
+  local spec = SPECIES[speciesId]
+  local mon = mod.content.pokemon:get(speciesId)
+  if not mon then
+    if not spec.optional then
+      mod.log:warn("%s is not present in the merged Pokemon registry; skipped", speciesId)
+    end
+    return "skipped"
+  end
+  if sameTyping(mon.types, target) then return "already" end
+  if not sourceTypingAllowed(mon.types, spec) then
+    mod.log:warn("%s has typing %s, not supported baseline %s; another mod may own its typing, skipped",
+                 speciesId, typingText(mon.types), baselineText(spec))
+    return "skipped"
+  end
+  mod.content.pokemon:patch(speciesId, { types = target })
+  return "applied"
+end
+
+local function patchMoveType(mod, moveId, expectedSource, targetType)
+  local move = mod.content.moves and mod.content.moves:get(moveId) or nil
+  if not move then return "skipped" end
+  if move.type == targetType then return "already" end
+  if move.type ~= expectedSource then
+    mod.log:warn("%s has move type %s, not supported baseline %s; another mod may own it, skipped",
+                 moveId, tostring(move.type), tostring(expectedSource))
+    return "skipped"
+  end
+  mod.content.moves:patch(moveId, { type = targetType })
+  return "applied"
+end
+
+-- Type toggles are authoritative for the canonical move ids they own. If an
+-- earlier mod supplied one of these records with a different type, enabling
+-- Fairy/Steel deliberately overwrites that type rather than silently skipping
+-- it. Missing moves are never created here.
+local function forceMoveType(mod, moveId, targetType)
+  local move = mod.content.moves and mod.content.moves:get(moveId) or nil
+  if not move then return "skipped" end
+  if move.type == targetType then return "already" end
+  mod.content.moves:patch(moveId, { type = targetType })
+  return "applied"
+end
+
+local function patchFairyMove(mod, moveId)
+  return forceMoveType(mod, moveId, FAIRY)
+end
+
+local function patchSteelMove(mod, moveId)
+  return forceMoveType(mod, moveId, STEEL)
+end
+
+local function patchDarkMove(mod, moveId, expectedSource)
+  return patchMoveType(mod, moveId, expectedSource, DARK)
+end
+
+-- Crystal 251 v0.9.19 intentionally keeps a parallel imported move table in
+-- mod.exports.crystalMoves for its battle router. Registry patches alone do
+-- not rewrite that table, so mirror type changes into the documented inter-mod
+-- export when it is available. The table is configured into Crystal battle
+-- modules by reference, so this keeps Crystal runtime behavior consistent with
+-- the merged move registry without touching Crystal files.
+local function patchCrystalMoveMirror(mod, crystalMod, moveId, expectedSource, targetType)
+  local moves = crystalMod and crystalMod.exports and crystalMod.exports.crystalMoves
+  local move = moves and moves[moveId] or nil
+  if not move then return "skipped" end
+  if move.type == targetType then return "already" end
+  if move.type ~= expectedSource then
+    mod.log:warn("Crystal 251 runtime move %s has type %s, not supported baseline %s; skipped",
+                 moveId, tostring(move.type), tostring(expectedSource))
+    return "skipped"
+  end
+  move.type = targetType
+  return "applied"
+end
+
+-- Authoritative counterpart for Fairy/Steel. The Crystal mirror is an
+-- inter-mod runtime data view, so enabled type toggles must keep it in lockstep
+-- with the merged move registry even if its prior value is unexpected.
+local function forceCrystalMoveMirror(crystalMod, moveId, targetType)
+  local moves = crystalMod and crystalMod.exports and crystalMod.exports.crystalMoves
+  local move = moves and moves[moveId] or nil
+  if not move then return "skipped" end
+  if move.type == targetType then return "already" end
+  move.type = targetType
+  return "applied"
+end
+
+local function setCompleteTypeRows(mod, typeId, attackOverrides, defenseOverrides)
+  local targets = {}
+  for _, id in ipairs(GEN1_TYPES) do targets[#targets + 1] = id end
+  targets[#targets + 1] = typeId
+
+  -- Only include optional modern types that actually exist in the merged
+  -- registry. This keeps standalone Gen I safe while making Crystal-owned
+  -- Steel/Dark participate when present.
+  for _, id in ipairs({ STEEL, DARK, FAIRY }) do
+    if id ~= typeId and mod.content.type_chart:get(id) ~= nil then
+      targets[#targets + 1] = id
+    end
+  end
+
+  local seen = {}
+  for _, other in ipairs(targets) do
+    if not seen[other] then
+      seen[other] = true
+      -- DARK>STEEL is era-selectable and must be a true no-op when its
+      -- dedicated switch is OFF, so leave that one row to the selector.
+      if not (typeId == DARK and other == STEEL) then
+        setMatchup(mod, typeId .. ">" .. other, attackOverrides[other] or 10)
+      end
+      setMatchup(mod, other .. ">" .. typeId, defenseOverrides[other] or 10)
+    end
+  end
+end
+
+-- The public mod.options API intentionally exposes define/get only. The Mod
+-- Manager owns writes through ManagerState:setOption. To make PRESET behave as
+-- a true aggregate control, narrowly wrap that writer for this mod only.
+local function installPresetOptionSync(mod)
+  local ok, ManagerState = pcall(require, "src.mods.ManagerState")
+  if not ok or type(ManagerState) ~= "table" or type(ManagerState.setOption) ~= "function" then
+    mod.log:warn("STEEL/FAIRY AND TYPING CHARTS could not install PRESET synchronization; component options still work")
+    return false
+  end
+
+  -- One process can construct more than one Loader/Game during restart flows.
+  -- Patch the class once, not once per mod load.
+  if ManagerState.__typingChartsPresetSyncInstalled then return true end
+
+  local originalSetOption = ManagerState.setOption
+  local syncing = false
+
+  -- Resolve the effective option value exactly as the Mod Manager does:
+  -- persisted value first, otherwise the schema default. This lets normal
+  -- "Reset defaults" writes keep their preset instead of being mistaken for
+  -- a manual customization.
+  local function effectiveOption(self, key)
+    local loader = self and self.game and self.game.mods
+    if not loader then return nil end
+
+    local bucket = loader.modOptions and loader.modOptions[MOD_ID]
+    if bucket and bucket[key] ~= nil then return bucket[key] end
+
+    local schema = loader.optionSchemas and loader.optionSchemas[MOD_ID]
+    if type(schema) == "table" then
+      for _, row in ipairs(schema) do
+        if row.key == key then return row.default end
+      end
+    end
+    return nil
+  end
+
+  local function matchesPreset(self, presetId)
+    local expected = PRESETS[presetId]
+    if not expected then return false end
+    for _, componentKey in ipairs(COMPONENT_KEYS) do
+      if effectiveOption(self, componentKey) ~= expected[componentKey] then
+        return false
+      end
+    end
+    return true
+  end
+
+  ManagerState.setOption = function(self, modId, key, value)
+    if modId ~= MOD_ID or syncing then
+      return originalSetOption(self, modId, key, value)
+    end
+
+    if key == KEY_PRESET then
+      local result = originalSetOption(self, modId, key, value)
+      local values = PRESETS[value]
+      if values then
+        syncing = true
+        for _, componentKey in ipairs(COMPONENT_KEYS) do
+          originalSetOption(self, modId, componentKey, values[componentKey])
+        end
+        syncing = false
+      end
+      -- CUSTOM deliberately preserves the current component values.
+      return result
+    end
+
+    if COMPONENT_KEY_SET[key] then
+      local result = originalSetOption(self, modId, key, value)
+      local currentPreset = effectiveOption(self, KEY_PRESET)
+
+      -- A real component edit that diverges from the active preset becomes
+      -- CUSTOM. Re-writing the same preset values (for example the Mod
+      -- Manager's Reset Defaults loop) keeps the preset intact. Once already
+      -- CUSTOM, component edits remain CUSTOM even if values happen to match
+      -- a built-in preset again.
+      if currentPreset == PRESET_CUSTOM or not matchesPreset(self, currentPreset) then
+        syncing = true
+        originalSetOption(self, modId, KEY_PRESET, PRESET_CUSTOM)
+        syncing = false
+      end
+      return result
+    end
+
+    return originalSetOption(self, modId, key, value)
+  end
+
+  ManagerState.__typingChartsPresetSyncInstalled = true
+  ManagerState.__typingChartsPresetSyncOriginal = originalSetOption
+  return true
+end
+
+local function legacyPreset(mod)
+  -- Earlier development builds stored a single option named "era". Reading an undefined key
+  -- still returns a persisted value, so use it only as the default for the new
+  -- schema. This preserves existing VANILLA / GEN II / GEN VI installations.
+  local old = mod.options:get("era")
+  if old == PRESET_VANILLA or old == PRESET_GEN2 or old == PRESET_GEN6 then
+    return old
+  end
+  return PRESET_GEN6
+end
+
+return function(mod)
+  -- Earlier releases already persisted PRESET/component values. New Dark
+  -- controls inherit GEN II / GEN VI built-in presets, while an existing
+  -- CUSTOM configuration gets DARK TYPE OFF and DARK VS STEEL OFF so updating
+  -- the mod cannot silently add a new type to a hand-tuned setup.
+  local savedPreset = mod.options:get(KEY_PRESET)
+  local defaultPreset = PRESETS[savedPreset] and savedPreset or legacyPreset(mod)
+  local defaults = PRESETS[defaultPreset] or PRESETS[PRESET_GEN6]
+  local defaultDarkType = defaults[KEY_DARK]
+  if savedPreset == PRESET_CUSTOM then defaultDarkType = false end
+  local defaultDarkSteel = savedPreset == PRESET_CUSTOM and FIX_OFF
+    or defaults[KEY_DARK_STEEL]
+
+  mod.options:define({
+    {
+      key = KEY_PRESET,
+      label = "PRESET",
+      type = "choice",
+      default = defaultPreset,
+      choices = {
+        { "VANILLA", PRESET_VANILLA },
+        { "GEN II (STEEL+DARK)", PRESET_GEN2 },
+        { "GEN VI (STEEL+DARK+FAIRY)", PRESET_GEN6 },
+        { "CUSTOM", PRESET_CUSTOM },
+      },
+    },
+    {
+      key = KEY_STEEL,
+      label = "STEEL TYPE",
+      type = "toggle",
+      default = defaults[KEY_STEEL],
+    },
+    {
+      key = KEY_DARK,
+      label = "DARK TYPE",
+      type = "toggle",
+      default = defaultDarkType,
+    },
+    {
+      key = KEY_FAIRY,
+      label = "FAIRY TYPE",
+      type = "toggle",
+      default = defaults[KEY_FAIRY],
+    },
+    {
+      key = KEY_GHOST_STEEL,
+      label = "GHOST VS STEEL FIX",
+      type = "choice",
+      default = defaults[KEY_GHOST_STEEL],
+      choices = {
+        { "OFF", FIX_OFF },
+        { "GEN II", FIX_GEN2 },
+        { "GEN VI", FIX_GEN6 },
+      },
+    },
+    {
+      key = KEY_DARK_STEEL,
+      label = "DARK VS STEEL FIX",
+      type = "choice",
+      default = defaultDarkSteel,
+      choices = {
+        { "OFF", FIX_OFF },
+        { "GEN II", FIX_GEN2 },
+        { "GEN VI", FIX_GEN6 },
+      },
+    },
+    {
+      key = KEY_GHOST_PSYCHIC,
+      label = "GHOST VS PSYCHIC FIX",
+      type = "choice",
+      default = defaults[KEY_GHOST_PSYCHIC],
+      choices = {
+        { "OFF", FIX_OFF },
+        { "Vanilla", FIX_VANILLA },
+        { "GEN II", FIX_GEN2 },
+      },
+    },
+    {
+      key = KEY_BUG_POISON,
+      label = "BUG VS POISON FIX",
+      type = "choice",
+      default = defaults[KEY_BUG_POISON],
+      choices = {
+        { "OFF", FIX_OFF },
+        { "Vanilla", FIX_VANILLA },
+        { "GEN II", FIX_GEN2 },
+      },
+    },
+    {
+      key = KEY_ICE_FIRE,
+      label = "ICE VS FIRE FIX",
+      type = "choice",
+      default = defaults[KEY_ICE_FIRE],
+      choices = {
+        { "OFF", FIX_OFF },
+        { "Vanilla", FIX_VANILLA },
+        { "GEN II", FIX_GEN2 },
+      },
+    },
+  })
+
+  installPresetOptionSync(mod)
+
+  local config = {
+    preset = tostring(mod.options:get(KEY_PRESET) or defaultPreset),
+    steel = mod.options:get(KEY_STEEL) and true or false,
+    dark = mod.options:get(KEY_DARK) and true or false,
+    fairy = mod.options:get(KEY_FAIRY) and true or false,
+    ghostSteel = tostring(mod.options:get(KEY_GHOST_STEEL) or FIX_OFF),
+    darkSteel = tostring(mod.options:get(KEY_DARK_STEEL) or FIX_OFF),
+    ghostPsychic = tostring(mod.options:get(KEY_GHOST_PSYCHIC) or FIX_VANILLA),
+    bugPoison = tostring(mod.options:get(KEY_BUG_POISON) or FIX_VANILLA),
+    iceFire = tostring(mod.options:get(KEY_ICE_FIRE) or FIX_VANILLA),
+  }
+
+  local crystal251 = type(mod.find) == "function" and mod.find("CRYSTAL_251") or nil
+  local crystalPresent = crystal251 ~= nil
+
+  -- These switches are authoritative when a concrete ruleset is selected.
+  -- OFF is deliberately a pure no-op: it never writes a Vanilla value over
+  -- Crystal (or any other earlier mod).
+  if config.ghostPsychic == FIX_GEN2 then
+    setMatchup(mod, "GHOST>PSYCHIC_TYPE", 20)
+  elseif config.ghostPsychic == FIX_VANILLA then
+    setMatchup(mod, "GHOST>PSYCHIC_TYPE", 0)
+  end
+
+  if config.bugPoison == FIX_GEN2 then
+    setMatchup(mod, "BUG>POISON", 5)
+    setMatchup(mod, "POISON>BUG", 10)
+  elseif config.bugPoison == FIX_VANILLA then
+    setMatchup(mod, "BUG>POISON", 20)
+    setMatchup(mod, "POISON>BUG", 20)
+  end
+
+  if config.iceFire == FIX_GEN2 then
+    setMatchup(mod, "ICE>FIRE", 5)
+  elseif config.iceFire == FIX_VANILLA then
+    setMatchup(mod, "ICE>FIRE", 10)
+  end
+
+  -- Crystal 251 owns Steel and Dark when its ROM cache is active. Never
+  -- duplicate-register those types; build on the merged registry instead.
+  local steelWasPresent = mod.content.type_chart:get(STEEL) ~= nil
+  local darkWasPresent = mod.content.type_chart:get(DARK) ~= nil
+  if config.steel then
+    ensureType(mod, STEEL, { name = "STEEL", category = "physical" })
+    setRows(mod, STEEL_COMMON)
+  end
+  if config.dark then
+    ensureType(mod, DARK, { name = "DARK", category = "special" })
+    setCompleteTypeRows(mod, DARK, DARK_ATTACK, DARK_DEFENSE)
+  end
+  local steelAvailable = mod.content.type_chart:get(STEEL) ~= nil
+  local darkAvailable = mod.content.type_chart:get(DARK) ~= nil
+
+  if steelAvailable then
+    if config.ghostSteel == FIX_GEN2 then
+      setMatchup(mod, "GHOST>STEEL", 5)
+    elseif config.ghostSteel == FIX_GEN6 then
+      setMatchup(mod, "GHOST>STEEL", 10)
+    end
+
+    if darkAvailable then
+      if config.darkSteel == FIX_GEN2 then
+        setMatchup(mod, "DARK>STEEL", 5)
+      elseif config.darkSteel == FIX_GEN6 then
+        setMatchup(mod, "DARK>STEEL", 10)
+      end
+    end
+  end
+
+  local applied, already, skipped = 0, 0, 0
+  local function count(result)
+    if result == "applied" then applied = applied + 1
+    elseif result == "already" then already = already + 1
+    elseif result == "skipped" then skipped = skipped + 1 end
+  end
+
+  -- Without Crystal, this adds the Generation II Magnemite/Magneton typing.
+  -- With Crystal, they are already Electric/Steel and are counted as correct.
+  if config.steel then
+    for _, speciesId in ipairs(STEEL_SPECIES) do
+      count(patchSpecies(mod, speciesId, SPECIES[speciesId].steel))
+    end
+  end
+
+  local movesApplied, movesAlready, movesSkipped = 0, 0, 0
+  local function countMove(result)
+    if result == "applied" then movesApplied = movesApplied + 1
+    elseif result == "already" then movesAlready = movesAlready + 1
+    elseif result == "skipped" then movesSkipped = movesSkipped + 1 end
+  end
+
+  if config.steel then
+    for _, moveId in ipairs(STEEL_MOVES) do
+      countMove(patchSteelMove(mod, moveId))
+      if crystalPresent then
+        forceCrystalMoveMirror(crystal251, moveId, STEEL)
+      end
+    end
+  end
+
+  if config.dark then
+    for moveId, expectedSource in pairs(DARK_MOVES) do
+      countMove(patchDarkMove(mod, moveId, expectedSource))
+      if crystalPresent then
+        patchCrystalMoveMirror(mod, crystal251, moveId, expectedSource, DARK)
+      end
+    end
+  end
+
+  if config.fairy then
+    ensureType(mod, FAIRY, { name = "FAIRY", category = "special" })
+    -- Write the complete Fairy attack/defense matrix, including neutral 1x
+    -- rows, after Crystal. This gives this mod final authority over Fairy.
+    setCompleteTypeRows(mod, FAIRY, FAIRY_ATTACK, FAIRY_DEFENSE)
+
+    for _, speciesId in ipairs(FAIRY_SPECIES) do
+      count(patchSpecies(mod, speciesId, SPECIES[speciesId].fairy))
+    end
+    for _, moveId in ipairs(FAIRY_MOVES) do
+      countMove(patchFairyMove(mod, moveId))
+      if crystalPresent then
+        forceCrystalMoveMirror(crystal251, moveId, FAIRY)
+      end
+    end
+  end
+
+  if crystalPresent and not config.steel and steelAvailable then
+    mod.log:info("Crystal 251 owns Steel; STEEL TYPE OFF is a no-op and leaves Crystal's Steel intact")
+  elseif crystalPresent and not steelWasPresent then
+    mod.log:info("Crystal 251 is installed but its Steel registry is not active yet (Crystal ROM data may still need import)")
+  end
+  if crystalPresent and not config.dark and darkAvailable then
+    mod.log:info("Crystal 251 owns Dark; DARK TYPE OFF is a no-op and leaves Crystal's Dark intact")
+  elseif crystalPresent and not darkWasPresent then
+    mod.log:info("Crystal 251 is installed but its Dark registry is not active yet (Crystal ROM data may still need import)")
+  end
+
+  mod.log:info(
+    "STEEL/FAIRY AND TYPING CHARTS: preset=%s steel=%s dark=%s fairy=%s ghost/steel=%s dark/steel=%s ghost/psychic=%s bug/poison=%s ice/fire=%s crystal251=%s; %d species patched, %d already correct, %d skipped; %d move typings patched, %d already correct, %d skipped",
+    config.preset, tostring(config.steel), tostring(config.dark), tostring(config.fairy),
+    config.ghostSteel, config.darkSteel, config.ghostPsychic, config.bugPoison, config.iceFire,
+    tostring(crystalPresent), applied, already, skipped, movesApplied, movesAlready, movesSkipped
+  )
+
+  mod.exports.config = config
+  mod.exports.presets = PRESETS
+  mod.exports.typeIds = { steel = STEEL, dark = DARK, fairy = FAIRY }
+  mod.exports.compatibility = { crystal251 = crystalPresent }
+  mod.exports.species = SPECIES
+end

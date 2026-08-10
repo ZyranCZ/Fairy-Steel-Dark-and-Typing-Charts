@@ -1,0 +1,39 @@
+return {
+  summary = "ANY CHANGES REQUIRE SAVE AND RESTART. Steel/Dark/Fairy type presets and authoritative type-chart controls with Crystal 251 compatibility.",
+  author = "ZyranCZ",
+  tags = { "types", "type-chart", "steel", "fairy", "dark", "gen2", "gen6", "crystal-251", "content" },
+  differences = {
+    changed = {
+      "PRESET controls eight independent component options",
+      "Any manual component change switches PRESET to CUSTOM",
+      "GEN II: Steel + Dark + Gen II matchup corrections",
+      "GEN VI: Steel + Dark + Fairy + Gen II corrections + Gen VI Steel behavior",
+      "OFF is a strict no-op and never restores Vanilla over Crystal",
+      "When Crystal 251 is enabled, this mod loads after it and has final say over enabled Fairy/type-chart choices",
+    },
+    added = {
+      "Standalone DARK TYPE support with complete Dark chart",
+      "Bite becomes Dark when DARK TYPE is enabled",
+      "Complete authoritative Fairy chart including explicit neutral 1x rows",
+      "Generation VI Fairy typings for all affected Gen I-II species available in Crystal 251",
+      "Fairy interactions with Crystal's Steel and Dark types",
+      "Charm, Moonlight, and Sweet Kiss are authoritatively Fairy when FAIRY TYPE is enabled",
+      "Iron Tail, Metal Claw, Steel Wing, and historical Snap Trap are authoritatively Steel when STEEL TYPE is enabled",
+      "Fairy/Steel move typing is mirrored into Crystal runtime move data",
+      "OFF choices for Ghost/Psychic, Bug/Poison and Ice/Fire",
+    },
+    known = {
+      "ANY CHANGES REQUIRE SAVE AND RESTART",
+      "Gameplay changes use load-time Pokemon/move/type-chart registries",
+      "With Crystal 251 active, type toggles set to OFF do not remove Crystal-owned Steel/Dark content",
+      "BUG VS POISON GEN II also applies the paired Poison->Bug Gen II correction",
+      "If another mod uses an unsupported custom typing for an affected Pokemon, this mod leaves that Pokemon record unchanged",
+      "Use the same configuration on both sides of a link/online battle",
+    },
+  },
+  credits = {
+    { who = "Gen1Recomp", for_ = "the native mod API, options system, content registries, and inter-mod exports" },
+    { who = "Crystal 251", for_ = "Generation II content interoperability target" },
+  },
+  compat = { engine = ">=0.1.0 <2.0.0", modApi = 2 },
+}
