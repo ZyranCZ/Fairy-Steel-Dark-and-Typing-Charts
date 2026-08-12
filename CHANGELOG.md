@@ -1,5 +1,34 @@
 # Changelog
 
+## 2.0.0 - 2026-08-12
+
+### Pokémon Gold / Generation II support
+- Added official Pokémon Gold support while preserving the Red/Blue/Yellow v1.2.2 behavior path.
+- The manifest now targets `games: ["gen1", "gold"]`; Gold is a first-class supported game.
+- Gold treats Steel and Dark as native content: their type records are never recreated by this mod, preserving native indexes and metadata.
+- STEEL TYPE OFF and DARK TYPE OFF remain strict no-ops and therefore never remove native Gold content.
+- Explicit Vanilla selectors are generation-relative: on Gold they restore native Generation II Ghost/Psychic, Bug/Poison and Ice/Fire relationships instead of Generation I values.
+- Crystal 251 runtime move mirroring remains restricted to Gen 1 and is never used as a Gold content source.
+
+### Fairy modernization on Gold
+- Added Fairy modernization for all 13 affected Gen I/II species in Gold's native Pokémon registry.
+- Charm, Moonlight and Sweet Kiss become Fairy through the shared move registry while retaining their existing category/effect fields.
+- Added the complete Fairy relationship matrix with native Gold Steel/Dark.
+- Gold's technical `BIRD` and `CURSE_TYPE` records are explicitly neutral to Fairy; arbitrary third-party custom types remain untouched.
+- Generation VI Ghost→Steel and Dark→Steel neutral relationships are available through the GEN VI preset.
+
+### Compatibility and architecture
+- Removed the hard `game_version` engine allow-list; future Gen1Recomp versions are not rejected only because their version number changed.
+- Preserved `mod.exports.config` semantics and added generation/effective/native-type diagnostics.
+- Gold uses the shared `type_chart`, `pokemon`, and `moves` registries rather than a battle-specific compatibility backend.
+- Preserved strict OFF ownership behavior so earlier type-chart mods survive wherever this mod is explicitly set to OFF.
+- Preserved Crystal 251 interoperability on Red/Blue/Yellow without making Crystal 251 a Gold dependency.
+
+### Validation
+- Preserved the original v1.2.2 Gen 1 contract test unchanged.
+- Added dedicated Gold fixture coverage for VANILLA, GEN II, GEN VI, CUSTOM, OFF no-op, native type metadata preservation, ownership guards, Fairy species/moves/chart, missing Snap Trap, and Crystal-mirror isolation.
+- Added sequential Gold → Gen 1 → Gold coverage and full preset synchronization checks to detect generation-state leakage.
+
 ## 1.2.2 - 2026-08-09
 
 ### Distribution

@@ -1,4 +1,5 @@
--- STEEL/FAIRY AND TYPING CHARTS v1.2.2
+-- STEEL/FAIRY AND TYPING CHARTS v2.0.0
+-- Final Gen 1 + Pokemon Gold / Gen 2 release
 --
 -- Preset + custom type-chart controls for Gen1Recomp.
 -- Content changes are load-time registry changes, so gameplay changes take
@@ -113,6 +114,30 @@ local GEN1_TYPES = {
   "GHOST", "FIRE", "WATER", "GRASS", "ELECTRIC", "PSYCHIC_TYPE", "ICE",
   "DRAGON",
 }
+
+-- Gold carries two canonical technical/legacy type records beyond the normal
+-- gameplay set. They are part of Gold's own registry, not types this mod owns.
+-- When Fairy is enabled we explicitly neutralize only these known native ids;
+-- arbitrary mod-added types remain untouched because this mod cannot know the
+-- intended Fairy relationship for them.
+local GOLD_TECHNICAL_TYPES = { "BIRD", "CURSE_TYPE" }
+
+-- Generation is runtime identity, never inferred from the content registry.
+-- The current Loader itself fixes its generation from GameVersion.generation()
+-- before loading mods, so the same boot-time service is safe during entry and
+-- avoids touching a partially wired mod.game instance.
+local function detectGeneration()
+  local ok, GameVersion = pcall(require, "src.core.GameVersion")
+  if ok and type(GameVersion) == "table" and type(GameVersion.generation) == "function" then
+    local success, generation = pcall(GameVersion.generation)
+    if success and (generation == 1 or generation == 2) then return generation end
+  end
+
+  -- Legacy/headless harnesses predating Gold have no GameVersion service.
+  -- Falling back to Gen 1 preserves the v1.2.2 behavior instead of guessing
+  -- from Steel/Dark records (Crystal 251 can add both to a Gen 1 boot).
+  return 1
+end
 
 local FAIRY_ATTACK = {
   FIGHTING = 20,
@@ -344,7 +369,7 @@ local function forceCrystalMoveMirror(crystalMod, moveId, targetType)
   return "applied"
 end
 
-local function setCompleteTypeRows(mod, typeId, attackOverrides, defenseOverrides)
+local function setCompleteTypeRows(mod, typeId, attackOverrides, defenseOverrides, generation)
   local targets = {}
   for _, id in ipairs(GEN1_TYPES) do targets[#targets + 1] = id end
   targets[#targets + 1] = typeId
@@ -355,6 +380,14 @@ local function setCompleteTypeRows(mod, typeId, attackOverrides, defenseOverride
   for _, id in ipairs({ STEEL, DARK, FAIRY }) do
     if id ~= typeId and mod.content.type_chart:get(id) ~= nil then
       targets[#targets + 1] = id
+    end
+  end
+
+  -- Gold's BIRD/CURSE_TYPE are native technical records. Fairy must be neutral
+  -- to them, but we deliberately do not enumerate arbitrary third-party types.
+  if generation == 2 and typeId == FAIRY then
+    for _, id in ipairs(GOLD_TECHNICAL_TYPES) do
+      if mod.content.type_chart:get(id) ~= nil then targets[#targets + 1] = id end
     end
   end
 
@@ -590,8 +623,13 @@ return function(mod)
     iceFire = tostring(mod.options:get(KEY_ICE_FIRE) or FIX_VANILLA),
   }
 
+  local generation = detectGeneration()
+  local isGold = generation == 2
   local crystal251 = type(mod.find) == "function" and mod.find("CRYSTAL_251") or nil
   local crystalPresent = crystal251 ~= nil
+  -- Crystal 251 is a Gen 1 interoperability layer. Gold's native registries
+  -- are authoritative even if a Crystal-like optional handle happens to exist.
+  local crystalRelevant = crystalPresent and not isGold
 
   -- These switches are authoritative when a concrete ruleset is selected.
   -- OFF is deliberately a pure no-op: it never writes a Vanilla value over
@@ -599,34 +637,54 @@ return function(mod)
   if config.ghostPsychic == FIX_GEN2 then
     setMatchup(mod, "GHOST>PSYCHIC_TYPE", 20)
   elseif config.ghostPsychic == FIX_VANILLA then
-    setMatchup(mod, "GHOST>PSYCHIC_TYPE", 0)
+    -- VANILLA is relative to the game being played: Gen I's original immune
+    -- relationship on Red/Blue/Yellow, Gold's native corrected 2x on Gold.
+    setMatchup(mod, "GHOST>PSYCHIC_TYPE", isGold and 20 or 0)
   end
 
   if config.bugPoison == FIX_GEN2 then
     setMatchup(mod, "BUG>POISON", 5)
     setMatchup(mod, "POISON>BUG", 10)
   elseif config.bugPoison == FIX_VANILLA then
-    setMatchup(mod, "BUG>POISON", 20)
-    setMatchup(mod, "POISON>BUG", 20)
+    if isGold then
+      setMatchup(mod, "BUG>POISON", 5)
+      setMatchup(mod, "POISON>BUG", 10)
+    else
+      setMatchup(mod, "BUG>POISON", 20)
+      setMatchup(mod, "POISON>BUG", 20)
+    end
   end
 
   if config.iceFire == FIX_GEN2 then
     setMatchup(mod, "ICE>FIRE", 5)
   elseif config.iceFire == FIX_VANILLA then
-    setMatchup(mod, "ICE>FIRE", 10)
+    setMatchup(mod, "ICE>FIRE", isGold and 5 or 10)
   end
 
-  -- Crystal 251 owns Steel and Dark when its ROM cache is active. Never
-  -- duplicate-register those types; build on the merged registry instead.
+  -- Red/Blue/Yellow: v1.2.2 owns creation/patching of optional Steel/Dark.
+  -- Gold: Steel/Dark are native records. Never reconstruct or patch those type
+  -- records, because doing so could discard native indexes/metadata. Enabling
+  -- the toggle only makes this mod authoritative over the selected canonical
+  -- relationships and move/species typings.
   local steelWasPresent = mod.content.type_chart:get(STEEL) ~= nil
   local darkWasPresent = mod.content.type_chart:get(DARK) ~= nil
   if config.steel then
-    ensureType(mod, STEEL, { name = "STEEL", category = "physical" })
-    setRows(mod, STEEL_COMMON)
+    if not isGold then
+      ensureType(mod, STEEL, { name = "STEEL", category = "physical" })
+    elseif not steelWasPresent then
+      mod.log:warn("Gold native STEEL record is missing; refusing to recreate it from Gen I assumptions")
+    end
+    if mod.content.type_chart:get(STEEL) ~= nil then setRows(mod, STEEL_COMMON) end
   end
   if config.dark then
-    ensureType(mod, DARK, { name = "DARK", category = "special" })
-    setCompleteTypeRows(mod, DARK, DARK_ATTACK, DARK_DEFENSE)
+    if not isGold then
+      ensureType(mod, DARK, { name = "DARK", category = "special" })
+    elseif not darkWasPresent then
+      mod.log:warn("Gold native DARK record is missing; refusing to recreate it from Gen I assumptions")
+    end
+    if mod.content.type_chart:get(DARK) ~= nil then
+      setCompleteTypeRows(mod, DARK, DARK_ATTACK, DARK_DEFENSE, generation)
+    end
   end
   local steelAvailable = mod.content.type_chart:get(STEEL) ~= nil
   local darkAvailable = mod.content.type_chart:get(DARK) ~= nil
@@ -672,7 +730,7 @@ return function(mod)
   if config.steel then
     for _, moveId in ipairs(STEEL_MOVES) do
       countMove(patchSteelMove(mod, moveId))
-      if crystalPresent then
+      if crystalRelevant then
         forceCrystalMoveMirror(crystal251, moveId, STEEL)
       end
     end
@@ -681,7 +739,7 @@ return function(mod)
   if config.dark then
     for moveId, expectedSource in pairs(DARK_MOVES) do
       countMove(patchDarkMove(mod, moveId, expectedSource))
-      if crystalPresent then
+      if crystalRelevant then
         patchCrystalMoveMirror(mod, crystal251, moveId, expectedSource, DARK)
       end
     end
@@ -691,40 +749,75 @@ return function(mod)
     ensureType(mod, FAIRY, { name = "FAIRY", category = "special" })
     -- Write the complete Fairy attack/defense matrix, including neutral 1x
     -- rows, after Crystal. This gives this mod final authority over Fairy.
-    setCompleteTypeRows(mod, FAIRY, FAIRY_ATTACK, FAIRY_DEFENSE)
+    setCompleteTypeRows(mod, FAIRY, FAIRY_ATTACK, FAIRY_DEFENSE, generation)
 
     for _, speciesId in ipairs(FAIRY_SPECIES) do
       count(patchSpecies(mod, speciesId, SPECIES[speciesId].fairy))
     end
     for _, moveId in ipairs(FAIRY_MOVES) do
       countMove(patchFairyMove(mod, moveId))
-      if crystalPresent then
+      if crystalRelevant then
         forceCrystalMoveMirror(crystal251, moveId, FAIRY)
       end
     end
   end
 
-  if crystalPresent and not config.steel and steelAvailable then
-    mod.log:info("Crystal 251 owns Steel; STEEL TYPE OFF is a no-op and leaves Crystal's Steel intact")
-  elseif crystalPresent and not steelWasPresent then
-    mod.log:info("Crystal 251 is installed but its Steel registry is not active yet (Crystal ROM data may still need import)")
+  if isGold then
+    if not config.steel and steelAvailable then
+      mod.log:info("Gold owns native Steel; STEEL TYPE OFF is a strict no-op and leaves native Steel intact")
+    end
+    if not config.dark and darkAvailable then
+      mod.log:info("Gold owns native Dark; DARK TYPE OFF is a strict no-op and leaves native Dark intact")
+    end
+  else
+    if crystalPresent and not config.steel and steelAvailable then
+      mod.log:info("Crystal 251 owns Steel; STEEL TYPE OFF is a no-op and leaves Crystal's Steel intact")
+    elseif crystalPresent and not steelWasPresent then
+      mod.log:info("Crystal 251 is installed but its Steel registry is not active yet (Crystal ROM data may still need import)")
+    end
+    if crystalPresent and not config.dark and darkAvailable then
+      mod.log:info("Crystal 251 owns Dark; DARK TYPE OFF is a no-op and leaves Crystal's Dark intact")
+    elseif crystalPresent and not darkWasPresent then
+      mod.log:info("Crystal 251 is installed but its Dark registry is not active yet (Crystal ROM data may still need import)")
+    end
   end
-  if crystalPresent and not config.dark and darkAvailable then
-    mod.log:info("Crystal 251 owns Dark; DARK TYPE OFF is a no-op and leaves Crystal's Dark intact")
-  elseif crystalPresent and not darkWasPresent then
-    mod.log:info("Crystal 251 is installed but its Dark registry is not active yet (Crystal ROM data may still need import)")
-  end
+
+  local effectiveConfig = {
+    generation = generation,
+    gamePolicy = isGold and "gold-native" or "gen1-v1.2.2",
+    requestedPreset = config.preset,
+    nativeSteel = isGold and steelWasPresent or false,
+    nativeDark = isGold and darkWasPresent or false,
+    steelAvailable = steelAvailable,
+    darkAvailable = darkAvailable,
+    -- Type-record ownership remains native on Gold even when this mod is
+    -- explicitly enforcing canonical Steel/Dark relationships.
+    modOwnsSteel = (not isGold) and config.steel and steelAvailable or false,
+    modOwnsDark = (not isGold) and config.dark and darkAvailable or false,
+    steelRulesEnforced = config.steel and steelAvailable or false,
+    darkRulesEnforced = config.dark and darkAvailable or false,
+    fairyEnabled = config.fairy,
+    crystal251Relevant = crystalRelevant,
+  }
 
   mod.log:info(
-    "STEEL/FAIRY AND TYPING CHARTS: preset=%s steel=%s dark=%s fairy=%s ghost/steel=%s dark/steel=%s ghost/psychic=%s bug/poison=%s ice/fire=%s crystal251=%s; %d species patched, %d already correct, %d skipped; %d move typings patched, %d already correct, %d skipped",
-    config.preset, tostring(config.steel), tostring(config.dark), tostring(config.fairy),
+    "STEEL/FAIRY AND TYPING CHARTS: generation=%d preset=%s steel=%s dark=%s fairy=%s ghost/steel=%s dark/steel=%s ghost/psychic=%s bug/poison=%s ice/fire=%s crystal251=%s crystalRelevant=%s; %d species patched, %d already correct, %d skipped; %d move typings patched, %d already correct, %d skipped",
+    generation, config.preset, tostring(config.steel), tostring(config.dark), tostring(config.fairy),
     config.ghostSteel, config.darkSteel, config.ghostPsychic, config.bugPoison, config.iceFire,
-    tostring(crystalPresent), applied, already, skipped, movesApplied, movesAlready, movesSkipped
+    tostring(crystalPresent), tostring(crystalRelevant), applied, already, skipped,
+    movesApplied, movesAlready, movesSkipped
   )
 
+  -- Preserve every v1.2.2 public export's meaning. `config` remains the
+  -- requested/persisted option view; generation-aware facts are additive.
   mod.exports.config = config
+  mod.exports.effectiveConfig = effectiveConfig
+  mod.exports.generation = generation
+  mod.exports.nativeTypes = { steel = isGold and steelWasPresent or false,
+                              dark = isGold and darkWasPresent or false }
   mod.exports.presets = PRESETS
   mod.exports.typeIds = { steel = STEEL, dark = DARK, fairy = FAIRY }
-  mod.exports.compatibility = { crystal251 = crystalPresent }
+  mod.exports.compatibility = { crystal251 = crystalPresent,
+                                crystal251Relevant = crystalRelevant }
   mod.exports.species = SPECIES
 end
