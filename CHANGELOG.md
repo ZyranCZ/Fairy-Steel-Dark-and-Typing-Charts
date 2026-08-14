@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.0.1 - 2026-08-14
+
+### Gen1Recomp v0.1.86 migration
+- Migrated generation detection away from a direct `src.core.GameVersion` require to the public `mod.game` owner with a Gold-only registry capability fallback for headless loading.
+- Replaced the process-global `ManagerState.setOption` class patch with the public `mod.options_changed` event and a narrowly isolated v0.1.86 option-store adapter.
+- Preserved immediate eight-component PRESET synchronization, CUSTOM switching, reset-default stability, and the existing persisted option keys.
+- Expanded the manifest target from the Gold version token to `gen2`, retaining Gold support while using the official generation target.
+- Kept the engine version unpinned; compatibility is determined by the Mod API and runtime behavior rather than a hard engine allow-list.
+- Added real v0.1.86 headless Loader coverage for Gen 1 and Gen 2 state=`loaded`, sandbox execution, registry effects, OFF behavior, and live preset synchronization.
+
 ## 2.0.0 - 2026-08-12
 
 ### Pokémon Gold / Generation II support

@@ -1,5 +1,5 @@
 return {
-  summary = "ANY CHANGES REQUIRE SAVE AND RESTART. Generation-aware Steel/Dark/Fairy presets and type-chart controls for Red/Blue/Yellow and Pokémon Gold.",
+  summary = "Restart after changes. Generation-aware Steel/Dark/Fairy presets and type-chart controls for Gen 1 and Gen 2.",
   author = "ZyranCZ",
   tags = { "types", "type-chart", "steel", "fairy", "dark", "gen2", "gen6", "gold", "crystal-251", "content" },
   differences = {
@@ -20,6 +20,7 @@ return {
       "Gold Fairy move retyping for Charm, Moonlight and Sweet Kiss without changing move category/effect",
       "Neutral Fairy handling for Gold's native BIRD and CURSE_TYPE technical records",
       "Generation/effective/native-type diagnostics in additive mod exports",
+      "Gen1Recomp v0.1.86 sandbox and loader migration",
       "Standalone DARK TYPE support with complete Dark chart on Gen 1",
       "Authoritative Fairy and Steel move typing when their type toggles are enabled",
     },

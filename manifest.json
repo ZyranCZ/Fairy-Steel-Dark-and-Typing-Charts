@@ -1,7 +1,7 @@
 {
   "id": "steel_typing",
   "name": "STEEL/FAIRY AND TYPING CHARTS",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "github": "ZyranCZ/Fairy-Steel-Dark-and-Typing-Charts",
   "api": 2,
   "entry": "main.lua",
@@ -17,11 +17,10 @@
     "CRYSTAL_251"
   ],
   "conflicts": [],
-  "incompatible": [],
   "experimental": false,
   "description": "ANY CHANGES REQUIRE SAVE AND RESTART. Preset and custom type-chart controls for Red/Blue/Yellow and Gold, with generation-aware native Steel/Dark preservation, optional Fairy modernization, strict OFF semantics, and Crystal 251 compatibility on Gen 1.",
   "games": [
     "gen1",
-    "gold"
+    "gen2"
   ]
 }

@@ -1,4 +1,4 @@
-# STEEL/FAIRY AND TYPING CHARTS v2.0.0
+# STEEL/FAIRY AND TYPING CHARTS v2.0.1
 
 A configurable type modernization and historical type-chart mod for **Gen1Recomp**.
 
@@ -6,7 +6,7 @@ Internal mod ID: `steel_typing`.
 
 > **ANY CHANGES REQUIRE SAVE AND RESTART.**
 
-> **Supported games:** Pokémon Red, Blue, Yellow, and Gold. Gold support is generation-aware: native Generation II Steel/Dark mechanics are preserved rather than recreated.
+> **Supported games:** Gen 1 (Pokémon Red, Blue and Yellow) and Gen 2 (Pokémon Gold in the current Gen1Recomp build). Gold support is generation-aware: native Generation II Steel/Dark mechanics are preserved rather than recreated.
 
 ## How the mod behaves by game
 
@@ -232,9 +232,9 @@ These distinguish requested settings from native/effective generation behavior.
 
 ## Implementation notes
 
-Pokémon, move and type-chart gameplay changes use Gen1Recomp API 2 content registries. Gold generation detection comes from runtime/game identity, never from detecting whether Steel or Dark happens to exist.
+Pokémon, move and type-chart gameplay changes use Gen1Recomp API 2 content registries. Gold generation detection prefers the public `mod.game` owner and falls back to the paired Gold-only `BIRD`/`CURSE_TYPE` registry capability in headless loading; it never guesses from Steel or Dark, which Crystal 251 can also add to Gen 1.
 
-The PRESET UI retains the existing narrow `ManagerState:setOption` integration because the current public `mod.options` surface provides definition/read access but not aggregate writes.
+The PRESET UI listens to the public `mod.options_changed` event. Gen1Recomp v0.1.86 still provides no public aggregate option writer, so the actual multi-option write is isolated in one small compatibility adapter and persists through the generation-neutral `mod.game` owner. No engine class is patched globally.
 
 The manifest intentionally has **no engine-version allow-list**. A future Gen1Recomp version is not rejected merely because its version number changed; compatibility is handled by actual behavior/testing instead.
 

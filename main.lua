@@ -1,5 +1,5 @@
--- STEEL/FAIRY AND TYPING CHARTS v2.0.0
--- Final Gen 1 + Pokemon Gold / Gen 2 release
+-- STEEL/FAIRY AND TYPING CHARTS v2.0.1
+-- Gen1Recomp v0.1.86 Mod API migration for Gen 1 + Gen 2
 --
 -- Preset + custom type-chart controls for Gen1Recomp.
 -- Content changes are load-time registry changes, so gameplay changes take
@@ -122,20 +122,27 @@ local GEN1_TYPES = {
 -- intended Fairy relationship for them.
 local GOLD_TECHNICAL_TYPES = { "BIRD", "CURSE_TYPE" }
 
--- Generation is runtime identity, never inferred from the content registry.
--- The current Loader itself fixes its generation from GameVersion.generation()
--- before loading mods, so the same boot-time service is safe during entry and
--- avoids touching a partially wired mod.game instance.
-local function detectGeneration()
-  local ok, GameVersion = pcall(require, "src.core.GameVersion")
-  if ok and type(GameVersion) == "table" and type(GameVersion.generation) == "function" then
-    local success, generation = pcall(GameVersion.generation)
-    if success and (generation == 1 or generation == 2) then return generation end
+-- Prefer the generation-neutral public owner handed out as mod.game. Gold's
+-- live owner exposes persistOptions while Gen 1 exposes writeOptions. A
+-- headless Loader deliberately has no game owner, so the fallback checks the
+-- two Gold-only technical type records together. Crystal 251 can add Steel and
+-- Dark to Gen 1, but it does not add BIRD plus CURSE_TYPE, which keeps that
+-- interoperability path unambiguous without requiring an engine singleton.
+local function detectGeneration(mod)
+  local game = mod.game
+  if type(game) == "table" then
+    if tonumber(game.generation) == 2 then return 2 end
+    if type(game.persistOptions) == "function"
+        and type(game.writeOptions) ~= "function" then
+      return 2
+    end
   end
 
-  -- Legacy/headless harnesses predating Gold have no GameVersion service.
-  -- Falling back to Gen 1 preserves the v1.2.2 behavior instead of guessing
-  -- from Steel/Dark records (Crystal 251 can add both to a Gen 1 boot).
+  local chart = mod.content and mod.content.type_chart
+  if chart and chart:get("BIRD") ~= nil and chart:get("CURSE_TYPE") ~= nil then
+    return 2
+  end
+
   return 1
 end
 
@@ -405,95 +412,99 @@ local function setCompleteTypeRows(mod, typeId, attackOverrides, defenseOverride
   end
 end
 
--- The public mod.options API intentionally exposes define/get only. The Mod
--- Manager owns writes through ManagerState:setOption. To make PRESET behave as
--- a true aggregate control, narrowly wrap that writer for this mod only.
+-- Gen1Recomp v0.1.86 exposes option define/get and the public
+-- mod.options_changed event, but no public option writer. Preset aggregation
+-- therefore listens on the public event and confines the one unavoidable
+-- v0.1.86 compatibility write to this adapter. It updates the same live and
+-- persisted buckets that ManagerState owns, then asks the public mod.game
+-- owner to persist. If a future Mod API adds mod.options:set, that public path
+-- is preferred automatically.
 local function installPresetOptionSync(mod)
-  local ok, ManagerState = pcall(require, "src.mods.ManagerState")
-  if not ok or type(ManagerState) ~= "table" or type(ManagerState.setOption) ~= "function" then
-    mod.log:warn("STEEL/FAIRY AND TYPING CHARTS could not install PRESET synchronization; component options still work")
+  if not mod.events or type(mod.events.on) ~= "function" then
+    mod.log:warn("PRESET synchronization unavailable because mod.events is missing; component options still work")
     return false
   end
 
-  -- One process can construct more than one Loader/Game during restart flows.
-  -- Patch the class once, not once per mod load.
-  if ManagerState.__typingChartsPresetSyncInstalled then return true end
-
-  local originalSetOption = ManagerState.setOption
   local syncing = false
+  local warnedUnavailable = false
 
-  -- Resolve the effective option value exactly as the Mod Manager does:
-  -- persisted value first, otherwise the schema default. This lets normal
-  -- "Reset defaults" writes keep their preset instead of being mistaken for
-  -- a manual customization.
-  local function effectiveOption(self, key)
-    local loader = self and self.game and self.game.mods
-    if not loader then return nil end
-
-    local bucket = loader.modOptions and loader.modOptions[MOD_ID]
-    if bucket and bucket[key] ~= nil then return bucket[key] end
-
-    local schema = loader.optionSchemas and loader.optionSchemas[MOD_ID]
-    if type(schema) == "table" then
-      for _, row in ipairs(schema) do
-        if row.key == key then return row.default end
-      end
-    end
-    return nil
-  end
-
-  local function matchesPreset(self, presetId)
+  local function matchesPreset(presetId)
     local expected = PRESETS[presetId]
     if not expected then return false end
     for _, componentKey in ipairs(COMPONENT_KEYS) do
-      if effectiveOption(self, componentKey) ~= expected[componentKey] then
+      if mod.options:get(componentKey) ~= expected[componentKey] then
         return false
       end
     end
     return true
   end
 
-  ManagerState.setOption = function(self, modId, key, value)
-    if modId ~= MOD_ID or syncing then
-      return originalSetOption(self, modId, key, value)
+  local function persist(game)
+    if type(game.persistOptions) == "function" then
+      game:persistOptions()
+    elseif type(game.writeOptions) == "function" then
+      game:writeOptions()
+    end
+  end
+
+  local function writeMany(values)
+    if type(mod.options.set) == "function" then
+      for key, value in pairs(values) do mod.options:set(key, value) end
+      return true
     end
 
+    local game = mod.game
+    local loader = type(game) == "table" and game.mods or nil
+    local options = type(game) == "table"
+      and ((game.save and game.save.options) or game.options) or nil
+    if type(loader) ~= "table" or type(options) ~= "table" then
+      if not warnedUnavailable then
+        warnedUnavailable = true
+        mod.log:warn("PRESET synchronization could not reach the live option store; restart and component options remain safe")
+      end
+      return false
+    end
+
+    options.modOptions = options.modOptions or {}
+    options.modOptions[MOD_ID] = options.modOptions[MOD_ID] or {}
+    loader.modOptions = loader.modOptions or {}
+    loader.modOptions[MOD_ID] = loader.modOptions[MOD_ID] or {}
+    for key, value in pairs(values) do
+      options.modOptions[MOD_ID][key] = value
+      loader.modOptions[MOD_ID][key] = value
+    end
+    persist(game)
+    return true
+  end
+
+  mod.events:on("mod.options_changed", function(event)
+    if syncing or type(event) ~= "table" or event.mod ~= MOD_ID then return end
+    local key, value = event.key, event.value
+
     if key == KEY_PRESET then
-      local result = originalSetOption(self, modId, key, value)
-      local values = PRESETS[value]
-      if values then
+      local preset = PRESETS[value]
+      if preset then
         syncing = true
-        for _, componentKey in ipairs(COMPONENT_KEYS) do
-          originalSetOption(self, modId, componentKey, values[componentKey])
-        end
+        writeMany(preset)
         syncing = false
       end
       -- CUSTOM deliberately preserves the current component values.
-      return result
+      return
     end
 
     if COMPONENT_KEY_SET[key] then
-      local result = originalSetOption(self, modId, key, value)
-      local currentPreset = effectiveOption(self, KEY_PRESET)
-
-      -- A real component edit that diverges from the active preset becomes
-      -- CUSTOM. Re-writing the same preset values (for example the Mod
-      -- Manager's Reset Defaults loop) keeps the preset intact. Once already
-      -- CUSTOM, component edits remain CUSTOM even if values happen to match
-      -- a built-in preset again.
-      if currentPreset == PRESET_CUSTOM or not matchesPreset(self, currentPreset) then
+      local currentPreset = mod.options:get(KEY_PRESET)
+      -- A component edit that diverges from its active preset becomes CUSTOM.
+      -- Reset Defaults first emits PRESET, which restores every component, so
+      -- its following same-value component events keep the preset intact.
+      if currentPreset == PRESET_CUSTOM or not matchesPreset(currentPreset) then
         syncing = true
-        originalSetOption(self, modId, KEY_PRESET, PRESET_CUSTOM)
+        writeMany({ [KEY_PRESET] = PRESET_CUSTOM })
         syncing = false
       end
-      return result
     end
+  end)
 
-    return originalSetOption(self, modId, key, value)
-  end
-
-  ManagerState.__typingChartsPresetSyncInstalled = true
-  ManagerState.__typingChartsPresetSyncOriginal = originalSetOption
   return true
 end
 
@@ -623,7 +634,7 @@ return function(mod)
     iceFire = tostring(mod.options:get(KEY_ICE_FIRE) or FIX_VANILLA),
   }
 
-  local generation = detectGeneration()
+  local generation = detectGeneration(mod)
   local isGold = generation == 2
   local crystal251 = type(mod.find) == "function" and mod.find("CRYSTAL_251") or nil
   local crystalPresent = crystal251 ~= nil
